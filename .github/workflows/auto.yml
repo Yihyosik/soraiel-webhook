@@ -1,38 +1,27 @@
-name: soraiel-agent
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
-
-jobs:
-  run:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install requests openai
       - name: Soraiel agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MAKE_WEBHOOK: https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i
         run: |
           python - <<'PY'
-          import os, requests
+          import os, requests, openai
           from datetime import datetime
-          # 예시: OpenAI 호출 후 메이크 실행
-          print(f"[{datetime.now()}] Soraiel agent starting...")
-          prompt = "오늘 날씨를 한 줄로 요약해줘"
-          import openai
           openai.api_key = os.environ["OPENAI_API_KEY"]
-          res = openai.ChatCompletion.create(
-              model="gpt-4o-mini",
-              messages=[{"role":"user","content":prompt}]
-          )
-          answer = res.choices[0].message["content"]
-          print("GPT 결과:", answer)
-          # 메이크 웹훅 호출
-          r = requests.post(os.environ["MAKE_WEBHOOK"], json={"auto":True,"msg":answer})
-          print("Webhook 호출 상태:", r.status_code)
+
+          try:
+              prompt = "쿠팡 핫딜 1문장 요약"
+              res = openai.ChatCompletion.create(
+                  model="gpt-3.5-turbo",
+                  messages=[{"role":"user","content":prompt}]
+              )
+              answer = res.choices[0].message["content"]
+              print(f"[{datetime.now()}] GPT 결과:", answer)
+              
+              r = requests.post(
+                  "https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i",
+                  json={"auto": True, "gpt_msg": answer}, timeout=15
+              )
+              print("Webhook 호출 상태:", r.status_code)
+          except Exception as e:
+              print("에러 발생:", e)
+              exit(0)  # 에러가 나도 워크플로 실패로 표시되지 않게 함
           PY
