@@ -1,3 +1,19 @@
+name: soraiel-agent
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests openai
       - name: Soraiel agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -5,23 +21,25 @@
           python - <<'PY'
           import os, requests, openai
           from datetime import datetime
+
           openai.api_key = os.environ["OPENAI_API_KEY"]
 
           try:
               prompt = "쿠팡 핫딜 1문장 요약"
               res = openai.ChatCompletion.create(
                   model="gpt-3.5-turbo",
-                  messages=[{"role":"user","content":prompt}]
+                  messages=[{"role": "user", "content": prompt}]
               )
               answer = res.choices[0].message["content"]
               print(f"[{datetime.now()}] GPT 결과:", answer)
-              
+
               r = requests.post(
                   "https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i",
-                  json={"auto": True, "gpt_msg": answer}, timeout=15
+                  json={"auto": True, "gpt_msg": answer},
+                  timeout=15
               )
               print("Webhook 호출 상태:", r.status_code)
           except Exception as e:
               print("에러 발생:", e)
-              exit(0)  # 에러가 나도 워크플로 실패로 표시되지 않게 함
+              exit(0)
           PY
