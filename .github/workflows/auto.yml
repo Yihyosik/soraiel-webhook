@@ -1,5 +1,4 @@
-name: auto-webhook
-
+name: soraiel-agent
 on:
   workflow_dispatch:
   schedule:
@@ -9,9 +8,31 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Make Webhook
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests openai
+      - name: Soraiel agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MAKE_WEBHOOK: https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i
         run: |
-          curl -X POST \
-               -H "Content-Type: application/json" \
-               -d '{"auto":true}' \
-               https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i
+          python - <<'PY'
+          import os, requests
+          from datetime import datetime
+          # 예시: OpenAI 호출 후 메이크 실행
+          print(f"[{datetime.now()}] Soraiel agent starting...")
+          prompt = "오늘 날씨를 한 줄로 요약해줘"
+          import openai
+          openai.api_key = os.environ["OPENAI_API_KEY"]
+          res = openai.ChatCompletion.create(
+              model="gpt-4o-mini",
+              messages=[{"role":"user","content":prompt}]
+          )
+          answer = res.choices[0].message["content"]
+          print("GPT 결과:", answer)
+          # 메이크 웹훅 호출
+          r = requests.post(os.environ["MAKE_WEBHOOK"], json={"auto":True,"msg":answer})
+          print("Webhook 호출 상태:", r.status_code)
+          PY
