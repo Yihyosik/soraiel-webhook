@@ -7,5 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call Make Webhook
-        run: curl -X POST -H "Content-Type: application/json" \
-          -d '{"auto":true}' https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"auto":true}' https://hook.us2.make.com/u3xbx4mf2gdgu4bt9vrq9a3o433hgf0i
